@@ -132,14 +132,14 @@ def fix_verse_dots(text):
 
 def fix_sus_chords(text):
     """Replace sus notation: (Esus4) -> (E4), etc."""
-    pat = re.compile(r"\(([A-G][\"b]?)sus(\d[^)]*)\)")
+    pat = re.compile(r"\(([A-H][\"b]?)sus(\d[^)]*)\)")
     new_text, count = pat.subn(r"(\1\2)", text)
     return new_text, count
 
 
 def fix_mi_chords(text):
-    """Replace mi notation: (Ami) -> (Am), (Emi7) -> (Em7), etc."""
-    pat = re.compile(r"\(([A-G][\"b]?)mi([^)]*)\)")
+    """Replace mi notation: (Ami) -> (Am), (Hmi7) -> (Hm7), etc."""
+    pat = re.compile(r"\(([A-H][\"b]?)mi([^)]*)\)")
     new_text, count = pat.subn(r"(\1m\2)", text)
     return new_text, count
 
@@ -348,7 +348,8 @@ def load_known_chords_from_tail(tail_path):
 
 def extract_chords_from_line(line):
     chords = []
-    for match in re.findall(r"\((.*?)\)", line):
+    normalized = re.sub(r"\(\(([^)]*)\)\)", r"(\1)", line)
+    for match in re.findall(r"\((.*?)\)", normalized):
         parts = match.strip().split()
         chords.extend(parts)
     return chords

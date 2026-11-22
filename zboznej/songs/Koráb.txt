@@ -6,9 +6,9 @@ ZC: 106
 E: 2012, 2026
 K:
 
-1:  /:(G7)Liják buší na bezradnou zem,
+1: /: (G7)Liják buší na bezradnou zem,
            +(C7)už to trvá kolikatej den, 
-           (D7)jenom tamhle na kopci se (C7)majestátně tyčí (G7)koráb.(D7):/
+           (D7)jenom tamhle na kopci se (C7)majestátně tyčí (G7)koráb.(D7) :/
            
                 Celá země už je v jednom kole,
                 +záře blesků dává hroznej pohled,
