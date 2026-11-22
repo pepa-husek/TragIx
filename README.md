@@ -2,6 +2,12 @@
 
 TragIx = Tragoudi Ixtys = Zpívající Ryba
 
+## Zpěvníky ke stažení
+
+- [Nezbožnej (červený) · aktuální PDF](https://github.com/pepa-husek/TragIx/releases/latest/download/nezboznej.pdf)
+- [Zbožnej (zelený) · aktuální PDF](https://github.com/pepa-husek/TragIx/releases/latest/download/zboznej.pdf)
+- [Archiv vydání](https://github.com/pepa-husek/TragIx/releases)
+
 Scout troop songbook build system. Two variants:
 
 - **Nezbožnej** (červený/red) -- secular campfire songs
@@ -51,6 +57,10 @@ variant+edition+version triples are active. The CI workflow and `--all`
 flag both read from it. To change what gets built, edit that one file.
 The version number appears on the title page and in the output PDF
 filename (e.g. `nezboznej_2025.3.pdf`). Bump it when you rebuild.
+
+When publishing a GitHub release as **Latest**, attach both current PDFs as
+`nezboznej.pdf` and `zboznej.pdf`. Include the current PDF for the other variant
+when only one has changed, and record both edition versions in the release notes.
 
 Options:
 
