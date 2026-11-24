@@ -1,0 +1,31 @@
+N: Pletenka
+A: Jan Nedvěd
+AC: ND
+Z: Atrey (text), Písničky Akordy (akordy)
+ZC:
+E: 2025
+K:
+
+\sl{Capo 2}
+
+1: (G)Vlak něco (Am)písknul, byl (Hm)poslední v (C)řádu,
+   (G)stýská se mi, (D7)lásko (G)má,
+   (G)stožáry (Am)svítí, noc (Hm)jistí si (C)vládu,
+   (G)hvězdám asi (D7)něco se (G)zdá.
+
+R: (C)Do náručí (D)prázdno mi (G)vklouzlo,
+   jó, (C)chybíš mi, jsi (D7)můj, můj (G)zvyk,
+   ticho vlaky jen krájí, kostel \uv{(C)bim-bim-bam-(G)bam},
+   jó, chybíš mi, má (D7)lásko, (G)má.
+
+2: Hedvábku krásný, můj úryvku z básní,
+   co o tobě jsem písničkám psal,
+   bělásku z louky, pletenko z mouky,
+   semletý mých myšlenek vál.
+
+3: Mý sluníčko z louží, má tmo, co tu krouží,
+   můj varhánku, můj vlásku, co spad',
+   spěchej, můj plůdku, je čas vinobraní,
+   usínám, už půjdem spát.
+
+R: + chybíš mi, má lásko, má ...

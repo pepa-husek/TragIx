@@ -1,0 +1,43 @@
+N: Mám ráda kytky
+A: Lidová
+AC:
+Z: Ultimate Guitar (anglický a německý text s akordy)
+ZC:
+E: 2025
+K:
+
+1: (G)Mám ráda (Em)kytky, (Am)mám ráda (D7)topoly,
+   (G)mám ráda (Em)hory, (Am)daleké (D7)obzory,
+   (G)líbí se mi (Em)navečer (Am)u ohně se (D7)hřát,
+
+R1: /: (G)Dumby džamby, (Em)dumby džamby, (Am)dumby džamby, (D7)dumby džamby. :/
+
+2: I like the flowers, I like the daffodils,
+   I like the mountains, I like the rolling hills,
+   I like the fireplace, when the light is low.
+
+R2: /: Dum-di da-di, dum-di da-di, dum-di da-di, dum-di da-di. :/
+
+3: I like the ocean, I like the open sea,
+   I like the forest, I like the bumblebees,
+   I like the stars above when night turns into day.
+
+4: I like the sunshine, I like the butterflies,
+   I like the windblow, I like the river flow,
+   I like the city lights when the moon is high.
+
+5: Ich lieb' den Frühling, ich lieb' den Sonnenschein,
+   wann wird es endlich mal wieder wärmer sein?
+   Schnee, Eis und Kälte müssen bald vergeh'n.
+
+6: Ich lieb' den Sommer, ich lieb' den Sand, das Meer,
+   Sandburgen bauen und keinen Regen mehr.
+   Eis essen, Sonnenschein, so soll's immer sein.
+
+7: Ich lieb' die Herbstzeit, stürmt's auf dem Stoppelfeld.
+   Drachen, die steigen, hoch in das Himmelszelt.
+   Blätter, die fallen von dem Baum herab.
+
+8: Ich lieb' den Winter, wenn es dann endlich schneit.
+   Hol' ich den Schlitten, denn es ist Winterzeit.
+   Schneemann bau'n und rodeln geh'n, ja, das find' ich schön.

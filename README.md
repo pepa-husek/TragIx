@@ -66,6 +66,7 @@ Options:
 
 ```bash
 --all          Build all editions from current_editions.txt
+--version N    Preview a version of the selected edition
 --duplex       Also produce an A5-on-A4 duplex PDF for the print shop
 --clean        Only clean the build directory, then exit
 --songs-only   Collect and write song files but do not compile the PDF
@@ -99,7 +100,8 @@ GitHub's built-in editor. No special tooling required.
 1. Click **Add file** in the appropriate `songs/` directory
 2. Paste the song content in the [standard format](#song-file-format)
 3. Make sure the `E:` header field includes the current edition year
-4. Propose the new file -- that's it, just one file!
+4. For Nezbožnej 2025, also list the filename in the
+   [supplement manifest](nezboznej/editions/2025.toml).
 
 ### Removing a song from an edition
 
@@ -144,6 +146,23 @@ Active build targets are listed in `current_editions.txt`.
 | Nezbožnej (red) | yes  | yes  | **current** | --          |
 | Zbožnej (green) | yes  | yes  | --          | in progress |
 
+
+## Nezbožnej 2025 supplements
+
+The [original page list](nezboznej/editions/2025.pages) fixes the order and
+printed page numbers of the 228 original songs. Keep supplement songs in
+`nezboznej/songs/` with `E: 2025`. Add their filenames to
+the applicable `[[supplements]]` block in
+the [edition manifest](nezboznej/editions/2025.toml). The build sorts each
+supplement by title in Czech alphabetical order. Set `heading` to the text
+printed above the first song, for example `Dodatek z listopadu 2026`.
+
+Preview an update with `python build_songbook.py --variant nezboznej --edition 2025 --version 4`.
+Once the layout is approved, record the printed start pages in the batch's
+`pages` list, paired with the filenames in its `songs` list, and update
+`current_editions.txt`. The build checks those page numbers on subsequent
+runs. A later batch gets a new block and the next release version that
+includes it.
 
 ## Overrides
 

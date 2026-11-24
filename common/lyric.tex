@@ -329,12 +329,81 @@
 \newcount\pagenum
 \newcount\songnum
 \newcount\toccount
+\def\setindexlink#1{\global\toccount=#1\relax\global\advance\toccount by -1}
 
 % Clickable index -> song hyperlinks (invisible in print).
 % Uses pdfTeX-compatible primitives available in both pdfTeX and LuaTeX/pdfcsplain.
 \def\songanchor{\pdfdest name{song.\the\songnum} fit\relax}%
 \def\toclink#1{\pdfstartlink attr{/Border [0 0 0]} goto name{song.#1}\relax}%
 \def\tocendlink{\pdfendlink\relax}%
+\newif\ifclosingsection
+\newif\ifemptyright
+\newif\ifinsupplement
+\ifdefined\SupplementLayout
+  % The printed last spread uses invisible padding. Inspect the chosen page
+  % box before adding its footer to distinguish padding from a continuation.
+  \directlua{
+    local glyph, rule = node.id("glyph"), node.id("rule")
+    local hlist, vlist = node.id("hlist"), node.id("vlist")
+    function tragix_page_has_text(head)
+      if not head then return false end
+      for item in node.traverse(head) do
+        if item.id == glyph then return true end
+        if item.id == rule and item.width > 0 and item.height + item.depth > 0 then
+          return true
+        end
+        if (item.id == hlist or item.id == vlist) and tragix_page_has_text(item.list) then
+          return true
+        end
+      end
+      return false
+    end
+  }
+\fi
+
+\def\flushsongsection{%
+  \closingsectiontrue
+  \penalty-10000
+  \closingsectionfalse}
+
+\let\printsupplementheading\relax
+\def\startsupplement#1{%
+  \flushsongsection
+  \insupplementtrue
+  \gdef\printsupplementheading{%
+    \vbox{%
+      \hrule height .35pt
+      \kern 1ex
+      \centerline{\AuthorFont #1}}%
+    \nobreak\vskip 1.25ex
+    \global\let\printsupplementheading\relax}%
+  \ifodd\pagenum
+    % The previous section stopped on a left page. Fill its facing page first.
+    \divide\vsize by 2
+    \output={\supplementrightoutput}%
+  \fi}
+
+% Let space below the songs stretch before the space between verses does.
+\def\topsupplementpage#1#2{%
+  \setbox#1=\vbox to #2{\unvbox#1\vfil}}
+
+\def\supplementrightoutput{%
+  \rmvboxes
+  \global\advance\pagenum by 1
+  \advance\hoffset by \InnerMargin
+  \offinterlineskip
+  \setbox2=\MakeAbsolutePageNum{\the\pagenum}{R}%
+  \ifdim\ht255>\vsize
+    \setbox6=\vsplit255 to \vsize
+  \else
+    \setbox6=\box255
+  \fi
+  \topsupplementpage6\vsize
+  \setbox4=\vbox{\copy2\vskip-\ht2\box6\MakePageNumRight}%
+  \count0=\pagenum\shipout\box4
+  \global\multiply\vsize by 2
+  \global\output={\lyricoutput}%
+  \ifvoid255\else\vbox{\unvbox255}\fi}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \def\setlyricoutput{%
   \PageLayout
@@ -351,6 +420,11 @@
   \output={\lyricoutput}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \def\lyricoutput{\poisepages
+  % Keep the chosen page breaks and repack the supplement for display.
+  \ifinsupplement
+    \topsupplementpage5{.5\vsize}%
+    \topsupplementpage6{.5\vsize}%
+  \fi
   \message{\the\vsize}
   % Create absolute page numbers
   \MakePagePair
@@ -360,12 +434,22 @@
    % Content with invisible placeholder + absolute page number overlay
    \setbox3=\vbox{\copy1\vskip-\ht1\box5\MakePageNumLeft}
    \count0=\count1\shipout\box3}
-  %right page 
+  \emptyrightfalse
+  \ifclosingsection
+    \ifnum\directlua{tex.sprint(tragix_page_has_text(tex.box[6].list) and 1 or 0)}=0
+      \emptyrighttrue
+    \fi
+  \fi
+  \ifemptyright
+    \global\advance\pagenum by -1
+  \else
+  %right page
   {\advance\hoffset by \InnerMargin
    \offinterlineskip
    % Content with invisible placeholder + absolute page number overlay
    \setbox4=\vbox{\copy2\vskip-\ht2\box6\MakePageNumRight}
    \count0=\count2\shipout\box4}
+  \fi
 }
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % poisepages -
@@ -402,11 +486,15 @@
     \setbox2=\vbox to 0.5\vsize{\unvcopy\RightPage}\advance\ActualBreakValue by \badness
 %    \message{right: \the\badness }
 %    \message{act: \the\ActualBreakValue best: \the\count5 }
-    \global\setbox\RightPage=\vbox{\vskip\SaveSkip\unvbox\RightPage}
+    \ifinsupplement
+      % A short section should begin on its left page instead of leaving it empty.
+      \ifdim\ht\LeftPage=0pt \ActualBreakValue=100001 \fi
+    \fi
     \ifnum\ActualBreakValue>\count5
     \else
       \count5=\ActualBreakValue\setbox5=\box1\setbox6=\box2
-    \fi  
+    \fi
+    \global\setbox\RightPage=\vbox{\vskip\SaveSkip\unvbox\RightPage}
   \ifdim\ht\LeftPage>0pt   
   \repeat   
   \count5=0
@@ -438,6 +526,7 @@
 \def\inputsong#1{%
   \vbox\bgroup
   \begingroup
+  \printsupplementheading
   \catcode`\^^M=13
   \parindent=\ParIndent
   \parskip=\ParSkip
@@ -502,6 +591,9 @@
   \ifvoid\lastchord\unhbox\lasttext% test trivial case
   \else\typechord%
   \fi}%
+% Queue the page-break preference after the current chord/text box closes.
+\def\preferredsongbreak{\aftergroup\addsongbreak}
+\def\addsongbreak{\vadjust{\penalty-30000}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% line/par. govering - another finite automata with \futurelet
 %% we use two \hfil at the end of line, because first could

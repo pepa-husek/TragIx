@@ -1,0 +1,6 @@
+base_version = 3
+
+[[supplements]]
+version = 4
+heading = "Dodatek z listopadu 2026"
+songs = ["Pletenka.txt", "Mám_ráda_kytky.txt"]

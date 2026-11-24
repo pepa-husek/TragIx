@@ -17,6 +17,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from functools import cmp_to_key
 from pathlib import Path
 
@@ -70,7 +71,7 @@ def _load_song_dir(directory):
 
 
 def collect_songs(variant_dir, edition):
-    """Collect songs whose E: header includes the requested edition year.
+    """Collect songs by filename when their E: header includes the edition.
 
     Override files from overrides/ take precedence over songs/ when both
     exist for the same title.
@@ -80,7 +81,7 @@ def collect_songs(variant_dir, edition):
         raise SystemExit(f"Songs directory not found: {songs_dir}")
 
     override_pool = _load_song_dir(variant_dir / "overrides")
-    songs = []
+    songs = {}
     matched_overrides = set()
 
     for txt in sorted(songs_dir.glob("*.txt")):
@@ -97,10 +98,10 @@ def collect_songs(variant_dir, edition):
             continue
 
         if title in override_pool:
-            songs.append((title, override_pool[title]))
+            songs[txt.name] = (title, override_pool[title])
             matched_overrides.add(title)
         else:
-            songs.append((title, content + "\n"))
+            songs[txt.name] = (title, content + "\n")
 
     unmatched = [t for t in override_pool if t not in matched_overrides]
     if unmatched:
@@ -108,6 +109,62 @@ def collect_songs(variant_dir, edition):
 
     print(f"  {len(songs)} songs collected ({len(matched_overrides)} using overrides)")
     return songs
+
+
+def supplement_plan(variant_dir, edition, version, songs):
+    """Return the original print order and the supplements active in this build."""
+    editions_dir = variant_dir / "editions"
+    manifest = editions_dir / f"{edition}.toml"
+    if not manifest.is_file():
+        return list(songs.values()), {}, {}
+
+    def reject(message):
+        raise SystemExit(f"{manifest}: {message}")
+
+    with manifest.open("rb") as stream:
+        settings = tomllib.load(stream)
+    base = {}
+    for line in (editions_dir / f"{edition}.pages").read_text(encoding="utf-8").splitlines():
+        page, filename = line.split("\t", 1)
+        if filename in base or filename not in songs:
+            reject(f"Original song listed twice or missing from edition: {filename}")
+        base[filename] = int(page)
+
+    ordered = list(base)
+    locked_pages = dict(enumerate(base.values(), 1))
+    assigned = set(ordered)
+    starts = {}
+    last_version = settings["base_version"]
+    for batch in settings.get("supplements", []):
+        batch_version, names = batch["version"], batch["songs"]
+        if type(batch_version) is not int or batch_version <= last_version or not names:
+            reject("Each supplement needs songs and a version greater than the preceding version.")
+        heading = batch.get("heading", "Dodatek")
+        if not isinstance(heading, str) or not heading.strip():
+            reject(f"Version {batch_version} needs a nonempty text heading.")
+        pages = batch.get("pages")
+        if pages is not None and len(pages) != len(names):
+            reject(f"Version {batch_version} needs one page number per song.")
+        last_version = batch_version
+        for name in names:
+            if name in assigned or name not in songs:
+                reject(f"Supplement song listed twice or missing from edition: {name}")
+            assigned.add(name)
+        if batch_version <= int(version):
+            starts[len(ordered)] = " ".join(heading.split())
+            sorted_names = sorted(names, key=lambda name: locale.strxfrm(songs[name][0]))
+            if pages is not None:
+                pages_by_name = dict(zip(names, pages))
+                locked_pages.update(enumerate(
+                    (pages_by_name[name] for name in sorted_names), len(ordered) + 1,
+                ))
+            ordered.extend(sorted_names)
+
+    unassigned = songs.keys() - assigned
+    if unassigned:
+        reject(f"Songs without a supplement: {', '.join(sorted(unassigned))}")
+
+    return [songs[name] for name in ordered], starts, locked_pages
 
 
 # ---------------------------------------------------------------------------
@@ -165,11 +222,11 @@ def _expand_k_field(content):
     return "\n".join(lines)
 
 
-def prepare_build(songs, variant, build_dir, version_string=""):
+def prepare_build(songs, build_dir, version_string, starts, locked_pages):
     """Sort songs, write .sng files, songbook.tex, songlist.tex,
     version.tex, and a convenience songlist_titles.txt into the build dir."""
-    set_czech_locale()
-    sorted_songs = sorted(songs, key=cmp_to_key(lambda a, b: czech_compare(a[0], b[0])))
+    if not locked_pages:
+        songs = sorted(songs, key=cmp_to_key(lambda a, b: czech_compare(a[0], b[0])))
 
     songs_dir = build_dir / "songs"
     songs_dir.mkdir(parents=True, exist_ok=True)
@@ -177,21 +234,25 @@ def prepare_build(songs, variant, build_dir, version_string=""):
     src_path = build_dir / "songbook.src.txt"
     songlist_titles = build_dir / "songlist_titles.txt"
     separator = "=" * 18
+    entries = []
 
     with (
         open(src_path, "w", encoding="utf-8") as src_file,
         open(songlist_titles, "w", encoding="utf-8") as titles_file,
     ):
-        for idx, (title, content) in enumerate(sorted_songs, 1):
+        for idx, (title, content) in enumerate(songs, 1):
             safe_title = re.sub(r"[^\w\-]", "_", title, flags=re.UNICODE)
             safe_title = re.sub(r"_+", "_", safe_title).strip("_")
             filename = f"{idx:03d}_{safe_title}.sng"
             (songs_dir / filename).write_text(_expand_k_field(content), encoding="utf-8")
+            entries.append((songs_dir / filename).relative_to(build_dir).as_posix())
             src_file.write(content + "\n" + separator + "\n\n")
             titles_file.write(title + "\n")
 
     songbook_tex = build_dir / "songbook.tex"
+    layout = "\\def\\SupplementLayout{}\n" if starts else ""
     songbook_tex.write_text(
+        layout +
         "\\input ../head.tex\n"
         "\\input songlist.tex\n"
         "\\input ../tail.tex\n",
@@ -199,9 +260,12 @@ def prepare_build(songs, variant, build_dir, version_string=""):
     )
 
     songlist_tex = build_dir / "songlist.tex"
+    tex_chars = {ord(char): rf"\char{ord(char)}\relax{{}}" for char in r"\{}#$%&_^~"}
     with open(songlist_tex, "w", encoding="utf-8") as out:
-        for sng in sorted((build_dir / "songs").glob("*.sng")):
-            rel = sng.relative_to(build_dir).as_posix()
+        for index, rel in enumerate(entries):
+            if index in starts:
+                heading = starts[index].translate(tex_chars)
+                out.write(f"\\startsupplement{{{heading}}}\n")
             out.write(f"\\inputsong{{{rel}}}\n")
 
     version_tex = build_dir / "version.tex"
@@ -217,11 +281,12 @@ def prepare_build(songs, variant, build_dir, version_string=""):
 # Compilation
 # ---------------------------------------------------------------------------
 
-def compile_pdf(build_dir, passes=2):
-    """Run luatex the specified number of times (2 = with index)."""
+def compile_pdf(build_dir, locked_pages, sort_index):
+    """Lay out the songs, then render the index with links to the shipout pages."""
     cmd = ["luatex", "-fmt", "pdfcsplain", "--interaction=nonstopmode", "songbook.tex"]
-    for i in range(1, passes + 1):
-        label = f"pass {i}/{passes}" if passes > 1 else "single pass"
+    toc_path = build_dir / "songbook.toc"
+    for i in (1, 2):
+        label = f"pass {i}/2"
         print(f"  Compiling ({label})...")
         result = subprocess.run(cmd, cwd=build_dir, capture_output=True, text=True)
         if result.returncode != 0:
@@ -231,6 +296,24 @@ def compile_pdf(build_dir, passes=2):
                 for e in errors:
                     print(f"    {e}")
             raise SystemExit(f"luatex failed on {label} (exit {result.returncode})")
+        if locked_pages or sort_index:
+            toc = toc_path.read_text(encoding="utf-8").splitlines()
+        if locked_pages:
+            for number, expected in locked_pages.items():
+                if number > len(toc):
+                    raise SystemExit(f"Missing published song {number} in the contents.")
+                actual = toc[number - 1].rsplit("{", 1)[-1].rstrip("}")
+                if actual != str(expected):
+                    raise SystemExit(f"Published song moved from page {expected}: {toc[number - 1]}")
+        if sort_index and i == 1:
+            titles = (build_dir / "songlist_titles.txt").read_text(encoding="utf-8").splitlines()
+            if len(titles) != len(toc):
+                raise SystemExit("The contents do not have exactly one entry per song.")
+            order = sorted(range(len(titles)), key=lambda index: locale.strxfrm(titles[index]))
+            toc_path.write_text(
+                "".join(f"\\setindexlink{{{index + 1}}}{toc[index]}\n" for index in order),
+                encoding="utf-8",
+            )
 
     pdf = build_dir / "songbook.pdf"
     size_kb = pdf.stat().st_size // 1024
@@ -361,6 +444,10 @@ def parse_args():
         help="Edition year (e.g. 2025). Required unless --all is used.",
     )
     parser.add_argument(
+        "--version", type=int,
+        help="Build a specific version of the selected edition.",
+    )
+    parser.add_argument(
         "--all", action="store_true",
         help=f"Build all editions listed in {EDITIONS_FILE}.",
     )
@@ -380,6 +467,8 @@ def parse_args():
 
     if not args.all and (not args.variant or not args.edition):
         parser.error("--variant and --edition are required (or use --all).")
+    if args.version is not None and (args.all or args.version < 0):
+        parser.error("--version requires a single edition and a non-negative number.")
 
     return args
 
@@ -407,7 +496,9 @@ def build_one(variant, edition, version="0", duplex=False, clean=False, songs_on
 
     # -- Prepare build files -------------------------------------------------
     print("Preparing build files...")
-    prepare_build(songs, variant, build_dir, version_string)
+    set_czech_locale()
+    ordered, starts, locked_pages = supplement_plan(variant_dir, edition, version, songs)
+    prepare_build(ordered, build_dir, version_string, starts, locked_pages)
 
     if songs_only:
         print("Done (--songs-only).")
@@ -415,7 +506,7 @@ def build_one(variant, edition, version="0", duplex=False, clean=False, songs_on
 
     # -- Compile PDF ---------------------------------------------------------
     print("Compiling PDF...")
-    compile_pdf(build_dir, passes=2)
+    compile_pdf(build_dir, locked_pages, sort_index=bool(starts))
 
     # -- Rename output PDF ---------------------------------------------------
     raw_pdf = build_dir / "songbook.pdf"
@@ -445,7 +536,7 @@ def main():
             print(f"{'='*60}\n")
             build_one(variant, edition, version, args.duplex, args.clean, args.songs_only)
     else:
-        version = _lookup_version(args.variant, args.edition)
+        version = args.version if args.version is not None else _lookup_version(args.variant, args.edition)
         if not shutil.which("luatex") and not args.clean and not args.songs_only:
             docker_run(args)
             return

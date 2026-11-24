@@ -53,4 +53,7 @@
 \ifodd\pageno
   {\PageLayout \nopagenumbers \null\vfill\break}
 \fi
+\ifdefined\SupplementLayout
+  \ifnum\pageno>6 \errmessage{The contents exceed the 2025 front matter}\fi
+\fi
 \setlyricoutput

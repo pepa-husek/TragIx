@@ -69,6 +69,9 @@ Verse continuation across blank lines: repeat the label prefix, e.g.:
 
   M: Second part, still the same bridge
 
+For a song that spans a spread, \preferredsongbreak at the end of a
+lyric line tells the page balancer to favor a break after that line.
+
 
 4. Verse references
 -------------------
