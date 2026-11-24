@@ -374,8 +374,10 @@
     \vbox{%
       \hrule height .35pt
       \kern 1ex
-      \centerline{\AuthorFont #1}}%
-    \nobreak\vskip 1.25ex
+      \centerline{\AuthorFont #1}%
+      \kern 1ex
+      \hrule height .35pt}%
+    \nobreak\vskip 2.5ex
     \global\let\printsupplementheading\relax}%
   \ifodd\pagenum
     % The previous section stopped on a left page. Fill its facing page first.
@@ -460,8 +462,16 @@
 \newbox\LeftPage
 \newcount\ActualBreakValue
 \newskip\SaveSkip
+\newif\ifsupplementspread
 \def\poisepages{%
   \rmvboxes % remove song vbox envelopes
+  \supplementspreadfalse
+  \ifinsupplement
+    \skip0=\FlexibleSongSkip\relax
+    \ifdim\dimexpr\ht255+\dp255-\skip0\relax>.5\vsize
+      \supplementspreadtrue
+    \fi
+  \fi
   \count5=100000 % actual best page break value
   \setbox\LeftPage=\box255 % actual left page
   \setbox\LeftPage=\vbox{\unvbox\LeftPage
@@ -481,6 +491,17 @@
       \global\setbox\RightPage=\vbox{\box0\unvbox\RightPage}
     }  
 %    \message{penalty: \the\ActualBreakValue }
+    % If this supplement needs both pages, prefer a break between songs
+    % whenever both sides fit at their natural height.
+    \ifsupplementspread
+      \ifnum\ActualBreakValue=\InterSongPenalty\relax
+        \ifdim\dimexpr\ht\LeftPage+\dp\LeftPage\relax<.5\vsize
+          \ifdim\dimexpr\ht\RightPage+\dp\RightPage\relax<.5\vsize
+            \advance\ActualBreakValue by -20001
+          \fi
+        \fi
+      \fi
+    \fi
     \setbox1=\vbox to 0.5\vsize{\unvcopy\LeftPage}\advance\ActualBreakValue by \badness
 %    \message{left: \the\badness }
     \setbox2=\vbox to 0.5\vsize{\unvcopy\RightPage}\advance\ActualBreakValue by \badness

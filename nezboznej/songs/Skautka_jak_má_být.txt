@@ -1,0 +1,36 @@
+N: Skautka, jak má být
+A: Pavel Riss
+AC:
+Z: Jizerská sova 2019, Ostružinky (melodie All About That Bass, Meghan Trainor a Kevin Kadish)
+ZC:
+E: 2025
+K:
+
+\sl{Capo 2}
+
+R1: Jsem prostě od přírody (G)skautka, jak má být, jak má být,
+    čím to je, že mám (Am)velký apetit, apetit,
+    kdo z vás mi (D)může poradit, poradit,
+    bobříka hladu (G)jak mám ulovit, ulovit.
+
+1: (G)V kuchyni táborové, službu mám dneska,
+   (Am)to se zas nabaštím, radostí tleskám,
+   (D)s uzeným, šunkafleky, ať se mi třesou špeky,
+   (G)chleba, máslo, džem, ať prasknu, čert to vem.
+
+2: Večer mě břicho bolí, no to je síla,
+   buď je to nadýmání, anebo kýla,
+   spacák mám plný plynu, tak letím na latrínu,
+   a jde to ze mě ven, tak to byl teda den.
+
+R2: Moje (G)rádkyně říkala, neboj se, malič(Am)ká - aha,
+    (D)v půl sedmé po ránu začíná rozcvič(G)ka - aha,
+    tam (G)faldy ti proženu a dám ti do tě(Am)la - aha,
+    figuru (D)budeš mít zase jak od Michelange(G)la - aha.
+
+3: Ráno mě budí zvonec, v břiše mi kručí,
+   vedoucí rozcvičky, kliky mě mučí,
+   po hygieně ranní, hned letím na snídani,
+   Kašlu vám na půst, vždyť skautky má bejt kus.
+
+M: R2 + R1
