@@ -108,6 +108,18 @@ GitHub's built-in editor. No special tooling required.
 Edit the song file and remove the edition year from the `E:` field.
 The song file stays in `songs/` for potential future use.
 
+## Git conventions
+
+Write commit subjects as `type(scope): short action`, for example
+`fix(chords): resolve diagram coverage warnings`. Use `feat` for features,
+`fix` for corrections, `docs` for documentation, and `chore` for maintenance.
+Keep each commit focused on one change that can be reviewed on its own.
+
+Use `<prefix>/<short-kebab-case-topic>` for branches. Examples include
+`feat/nezboznej-supplements`, `fix/chord-diagram-coverage`, and
+`codex/nezboznej-2025-supplements`. Use these conventions for new work and
+preserve published history so collaborators can pull normally.
+
 ## Song file format
 
 Full specification: `doc/song_format.txt` (English, technical).
