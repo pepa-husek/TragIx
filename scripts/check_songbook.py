@@ -334,29 +334,46 @@ ALL_CHECKS = [
 # Chord diagram coverage
 # ===================================================================
 
-def load_known_chords_from_tail(tail_path):
+def load_chord_diagrams(tail_path):
     known = set()
+    aliases = {}
     with open(tail_path, encoding="utf-8") as f:
         for line in f:
-            m = re.match(r"\\chdig\{([^}]*)\}", line.strip())
-            if m:
-                chord = m.group(1).strip()
+            entry = line.strip()
+            if match := re.match(r"\\chdig\{([^}]*)\}", entry):
+                chord = match[1].strip()
                 if chord:
                     known.add(chord)
-    return known
+            elif match := re.fullmatch(r"%\s*chord-alias:\s*(\S+)\s*=\s*(\S+)", entry):
+                aliases[match[1]] = match[2]
+    for alias, diagram in aliases.items():
+        if diagram not in known:
+            raise SystemExit(f"{tail_path}: chord alias {alias} refers to missing diagram {diagram}")
+    return known, aliases
 
 
 def extract_chords_from_line(line):
+    """Extract chord groups while keeping parentheses in compound modifiers."""
     chords = []
-    normalized = re.sub(r"\(\(([^)]*)\)\)", r"(\1)", line)
-    for match in re.findall(r"\((.*?)\)", normalized):
-        parts = match.strip().split()
-        chords.extend(parts)
+    depth = 0
+    for index, character in enumerate(line):
+        if character == "(":
+            if depth == 0:
+                start = index + 1
+            depth += 1
+        elif character == ")" and depth:
+            depth -= 1
+            if depth == 0:
+                for chord in line[start:index].split():
+                    if chord.startswith("(") and chord.endswith(")"):
+                        chord = chord[1:-1]
+                    if chord:
+                        chords.append(chord)
     return chords
 
 
 def chord_coverage(all_lines, tail_path):
-    known = load_known_chords_from_tail(tail_path)
+    known, aliases = load_chord_diagrams(tail_path)
     unknown_counter = Counter()
     used = set()
     for _num, line in all_lines:
@@ -366,6 +383,8 @@ def chord_coverage(all_lines, tail_path):
         for chord in extract_chords_from_line(line):
             if chord in known:
                 used.add(chord)
+            elif chord in aliases:
+                used.add(aliases[chord])
             else:
                 unknown_counter[chord] += 1
     return unknown_counter, sorted(known - used)

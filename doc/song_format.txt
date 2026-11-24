@@ -119,6 +119,9 @@ spaces inside a word:
   Good: (G)jed(Em)nou
   Bad:  (G) jednou (Em)       -- extra spaces shift placement
 
+If a printed diagram also covers a differently labeled chord, add a
+comment such as % chord-alias: B/F = B to the variant's tail.tex. An
+alias must name a printed shape that has the specified bass note.
 
 7. Typographic conventions
 --------------------------
